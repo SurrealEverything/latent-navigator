@@ -1,3 +1,8 @@
+import datetime
+import os
+import random
+import string
+
 import numpy as np
 import torch
 from diffusers import AutoPipelineForText2Image
@@ -32,9 +37,22 @@ crossover_rate = 0.9
 inference_steps = 4
 key_feedback = None
 
+# Generate a random string
+random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
+
+# Format the prompt
+formatted_prompt = ''.join(e.lower() if e.isalnum() else '_' for e in prompt if e.isalnum() or e.isspace()).strip()
+
+# Generate folder name
+folder_name = f"{datetime.datetime.now().strftime('%Y%m%d')}_{formatted_prompt}_{random_string}"
+folder_path = os.path.join("saved_images", folder_name)
+
 # Define min/max values for the prompt embeddings
 embedding_range = SDXLTurboEmbeddingRange()
 pooled_embedding_range = SDXLTurboPooledEmbeddingRange()
+
+# Initialize saving flag
+image_to_save = None
 
 # Initialize components for the genetic algorithm
 creator = SDXLPromptEmbeddingImageCreator(batch_size=1, inference_steps=inference_steps)
@@ -92,20 +110,23 @@ def display_image(prompt_embed_data):
     cv2.imshow("Optimized Image", open_cv_image)
     cv2.waitKey(1)  # Add a short delay to update the image
 
+    return open_cv_image
+
 
 # Listener for keyboard inputs
 def on_press(key):
-    global key_feedback
+    global key_feedback, image_to_save
     try:
         if key.char == "y":
             key_feedback = 1  # Positive feedback
         elif key.char == "n":
             key_feedback = 0  # Negative feedback
+        elif key.char == "s":
+            image_to_save = True  # Set flag to save the image
         elif key.char == "q":
             key_feedback = "q"  # Quit signal
     except AttributeError:
         pass
-
 
 listener = keyboard.Listener(on_press=on_press)
 listener.start()
@@ -116,11 +137,18 @@ try:
         fitness_scores = []
 
         for individual in population:
-            display_image(individual.arguments)
+            open_cv_image = display_image(individual.arguments)
             key_feedback = None
 
             while key_feedback is None:
                 cv2.waitKey(1)  # Wait for user input
+
+                if image_to_save:
+                    if not os.path.exists(folder_path):
+                        os.makedirs(folder_path)
+                    image_path = os.path.join(folder_path, f"generation{generation + 1}_individual_{population.index(individual) + 1}.png")
+                    cv2.imwrite(image_path, open_cv_image)  # Save the current image
+                    image_to_save = None  # Reset the flag
 
             if key_feedback == "q":
                 print("Exiting...")
