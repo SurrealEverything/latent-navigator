@@ -1,7 +1,6 @@
-import datetime
 import os
-import random
 import string
+import time
 
 import numpy as np
 import torch
@@ -37,14 +36,14 @@ crossover_rate = 0.9
 inference_steps = 4
 key_feedback = None
 
-# Generate a random string
-random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
+# Generate timestamp
+current_timestamp = int(time.time())
 
 # Format the prompt
 formatted_prompt = ''.join(e.lower() if e.isalnum() else '_' for e in prompt if e.isalnum() or e.isspace()).strip()
 
 # Generate folder name
-folder_name = f"{datetime.datetime.now().strftime('%Y%m%d')}_{formatted_prompt}_{random_string}"
+folder_name = f"{current_timestamp}_{formatted_prompt}"
 folder_path = os.path.join("saved_images", folder_name)
 
 # Define min/max values for the prompt embeddings
@@ -107,10 +106,30 @@ def display_image(prompt_embed_data):
     ).images[0]
     open_cv_image = np.array(image)
     open_cv_image = open_cv_image[:, :, ::-1].copy()  # Convert RGB to BGR for OpenCV
-    cv2.imshow("Optimized Image", open_cv_image)
+
+    # Create a copy for display that includes instructions
+    display_image = open_cv_image.copy()
+
+    # Instructions for user input, split across multiple lines
+    instructions = [
+        "Press 'Y' for Yes",
+        "Press 'N' for No",
+        "Press 'S' to Save",
+        "Press 'Q' to Quit"
+    ]
+    for i, line in enumerate(instructions):
+        cv2.putText(display_image, line, (10, 30 + i*30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+
+    # Configure window to remove the clickable portion on top and set its size
+    window_name = "Optimized Image"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL | cv2.WINDOW_GUI_NORMAL)
+    cv2.imshow(window_name, display_image)
+    cv2.resizeWindow(window_name, open_cv_image.shape[1], open_cv_image.shape[0] + 120)  # Add extra space for instructions
     cv2.waitKey(1)  # Add a short delay to update the image
 
     return open_cv_image
+
+
 
 
 # Listener for keyboard inputs
