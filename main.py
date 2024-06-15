@@ -1,5 +1,4 @@
 import os
-import string
 import time
 
 import numpy as np
@@ -20,12 +19,10 @@ from evolutionary_prompt_embedding.value_ranges import (
 from evolutionary.evolutionary_selectors import TournamentSelector
 from evolutionary.evolution_base import SolutionCandidate
 
-# Load the diffusion model
-pipe = AutoPipelineForText2Image.from_pretrained(
-    "stabilityai/sdxl-turbo", torch_dtype=torch.float16, variant="fp16"
-)
-pipe.to("cuda")
-prompt = "Green monster surprised by a jump scare in a horror movie"
+
+# Ask user to input the initial prompt for the genetic algorithm
+prompt_input = input("Enter a prompt for the genetic algorithm or press Enter to use the default: ").strip()
+prompt = prompt_input if prompt_input else "Green monster surprised by a jump scare in a horror movie"
 
 # Parameters
 pop_size = 5
@@ -39,10 +36,8 @@ key_feedback = None
 # Generate timestamp
 current_timestamp = int(time.time())
 
-# Format the prompt
+# Generate save folder path
 formatted_prompt = ''.join(e.lower() if e.isalnum() else '_' for e in prompt if e.isalnum() or e.isspace()).strip()
-
-# Generate folder name
 folder_name = f"{current_timestamp}_{formatted_prompt}"
 folder_path = os.path.join("saved_images", folder_name)
 
@@ -86,24 +81,8 @@ print("Starting Genetic Algorithm Optimization...")
 
 # Function to display image from prompt embedding
 def display_image(prompt_embed_data):
-    noise_tensor = (
-        prompt_embed_data.prompt_embeds.clone()
-        .detach()
-        .requires_grad_(False)
-        .to("cuda")
-    )
-    pooled_tensor = (
-        prompt_embed_data.pooled_prompt_embeds.clone()
-        .detach()
-        .requires_grad_(False)
-        .to("cuda")
-    )
-    image = pipe(
-        prompt_embeds=noise_tensor,
-        pooled_prompt_embeds=pooled_tensor,
-        num_inference_steps=inference_steps,
-        guidance_scale=0.0,
-    ).images[0]
+    image = creator.create_solution(prompt_embed_data).result.images[0]
+
     open_cv_image = np.array(image)
     open_cv_image = open_cv_image[:, :, ::-1].copy()  # Convert RGB to BGR for OpenCV
 
@@ -128,9 +107,6 @@ def display_image(prompt_embed_data):
     cv2.waitKey(1)  # Add a short delay to update the image
 
     return open_cv_image
-
-
-
 
 # Listener for keyboard inputs
 def on_press(key):
