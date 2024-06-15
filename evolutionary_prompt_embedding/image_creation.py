@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Any, Literal
 
-from evolutionary_prompt_embedding.argument_types import PooledPromptEmbedData, PromptEmbedData
+from evolutionary_prompt_embedding.argument_types import (
+    PooledPromptEmbedData,
+    PromptEmbedData,
+)
 from evolutionary.evolution_base import SolutionCandidate
 from evolutionary_imaging.image_base import ImageCreator, ImageSolutionData, A
 import torch
@@ -17,24 +20,29 @@ class PromptEmbeddingImageCreator(ImageCreator[A], ABC):
         pass
 
 
-class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEmbedData]):
+class SDXLPromptEmbeddingImageCreator(
+    PromptEmbeddingImageCreator[PooledPromptEmbedData]
+):
     """
     A class that creates image solutions from prompt embeddings using the SDXL pipeline.
     """
 
-    def __init__(self,
-                 inference_steps: int,
-                 batch_size: int,
-                 deterministic: bool = True,
-                 model_id: Literal["stabilityai/sdxl-turbo"] = "stabilityai/sdxl-turbo"):
+    def __init__(
+        self,
+        inference_steps: int,
+        batch_size: int,
+        deterministic: bool = True,
+        model_id: Literal["stabilityai/sdxl-turbo"] = "stabilityai/sdxl-turbo",
+    ):
         """
         Initializes the ImageCreator with the given parameters.
         By default, uses the "stabilityai/sdxl-turbo" model, other SDXL variants should work as well.
         """
         super().__init__(model_id, inference_steps, batch_size, deterministic)
 
-    def create_solution(self, argument: PooledPromptEmbedData) \
-            -> SolutionCandidate[PooledPromptEmbedData, ImageSolutionData, Any]:
+    def create_solution(
+        self, argument: PooledPromptEmbedData
+    ) -> SolutionCandidate[PooledPromptEmbedData, ImageSolutionData, Any]:
         prompt_embeds = argument.prompt_embeds
         pooled_prompt_embeds = argument.pooled_prompt_embeds
 
@@ -44,7 +52,9 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
                 pooled_prompt_embeds=pooled_prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
-                guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
+                guidance_scale=(
+                    0.0 if "turbo" in self._model_id else None
+                ),  # 0 for Turbo models
                 generator=self._generators,
             ).images
         except Exception as e:
@@ -56,7 +66,9 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
                 pooled_prompt_embeds=pooled_prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
-                guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
+                guidance_scale=(
+                    0.0 if "turbo" in self._model_id else None
+                ),  # 0 for Turbo models
                 generator=self._generators,
             ).images
 
@@ -73,8 +85,14 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
         text_encoder = self._pipeline.text_encoder
         text_encoder_2 = self._pipeline.text_encoder_2
 
-        tokenizers = [tokenizer, tokenizer_2] if tokenizer is not None else [tokenizer_2]
-        text_encoders = ([text_encoder, text_encoder_2] if text_encoder is not None else [text_encoder_2])
+        tokenizers = (
+            [tokenizer, tokenizer_2] if tokenizer is not None else [tokenizer_2]
+        )
+        text_encoders = (
+            [text_encoder, text_encoder_2]
+            if text_encoder is not None
+            else [text_encoder_2]
+        )
 
         # We only use one prompt here, but you could also use two prompts for SDXL
         prompt_2 = prompt
@@ -95,18 +113,24 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
             )
 
             text_input_ids = text_inputs.input_ids
-            untruncated_ids = tokenizer(prompt, padding="longest", return_tensors="pt").input_ids
+            untruncated_ids = tokenizer(
+                prompt, padding="longest", return_tensors="pt"
+            ).input_ids
 
-            if untruncated_ids.shape[-1] >= text_input_ids.shape[-1] and not torch.equal(
-                    text_input_ids, untruncated_ids
-            ):
-                removed_text = tokenizer.batch_decode(untruncated_ids[:, tokenizer.model_max_length - 1: -1])
+            if untruncated_ids.shape[-1] >= text_input_ids.shape[
+                -1
+            ] and not torch.equal(text_input_ids, untruncated_ids):
+                removed_text = tokenizer.batch_decode(
+                    untruncated_ids[:, tokenizer.model_max_length - 1 : -1]
+                )
                 print(
                     "The following part of your input was truncated because CLIP can only handle sequences up to"
                     f" {tokenizer.model_max_length} tokens: {removed_text}"
                 )
 
-            prompt_embeds = text_encoder(text_input_ids.to(self._pipeline.device), output_hidden_states=True)
+            prompt_embeds = text_encoder(
+                text_input_ids.to(self._pipeline.device), output_hidden_states=True
+            )
 
             # We are only ALWAYS interested in the pooled output of the final text encoder
             pooled_prompt_embeds = prompt_embeds[0]
@@ -124,18 +148,22 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
     An ImageCreator that creates image solutions from prompt embeddings using the SD pipeline.
     """
 
-    def __init__(self,
-                 inference_steps: int,
-                 batch_size: int,
-                 deterministic: bool = True,
-                 model_id: Literal["stabilityai/sd-turbo"] = "stabilityai/sd-turbo"):
+    def __init__(
+        self,
+        inference_steps: int,
+        batch_size: int,
+        deterministic: bool = True,
+        model_id: Literal["stabilityai/sd-turbo"] = "stabilityai/sd-turbo",
+    ):
         """
         Initializes the ImageCreator with the given parameters.
         By default, uses the "stabilityai/sd-turbo" model, other SD variants should work as well.
         """
         super().__init__(model_id, inference_steps, batch_size, deterministic)
 
-    def create_solution(self, argument: PromptEmbedData) -> SolutionCandidate[PromptEmbedData, ImageSolutionData, Any]:
+    def create_solution(
+        self, argument: PromptEmbedData
+    ) -> SolutionCandidate[PromptEmbedData, ImageSolutionData, Any]:
         prompt_embeds = argument.prompt_embeds
 
         try:
@@ -143,7 +171,9 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
                 prompt_embeds=prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
-                guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
+                guidance_scale=(
+                    0.0 if "turbo" in self._model_id else None
+                ),  # 0 for Turbo models
                 generator=self._generators,
             ).images
         except Exception as e:
@@ -154,7 +184,9 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
                 prompt_embeds=prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
-                guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
+                guidance_scale=(
+                    0.0 if "turbo" in self._model_id else None
+                ),  # 0 for Turbo models
                 generator=self._generators,
             ).images
 
@@ -179,12 +211,16 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
 
         # Get the output from the text encoder
         text_input_ids = text_inputs.input_ids
-        untruncated_ids = tokenizer(prompt, padding="longest", return_tensors="pt").input_ids
+        untruncated_ids = tokenizer(
+            prompt, padding="longest", return_tensors="pt"
+        ).input_ids
 
         if untruncated_ids.shape[-1] >= text_input_ids.shape[-1] and not torch.equal(
-                text_input_ids, untruncated_ids
+            text_input_ids, untruncated_ids
         ):
-            removed_text = tokenizer.batch_decode(untruncated_ids[:, tokenizer.model_max_length - 1: -1])
+            removed_text = tokenizer.batch_decode(
+                untruncated_ids[:, tokenizer.model_max_length - 1 : -1]
+            )
             print(
                 "The following part of your input was truncated because CLIP can only handle sequences up to"
                 f" {tokenizer.model_max_length} tokens: {removed_text}"
