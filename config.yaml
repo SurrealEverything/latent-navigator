@@ -1,0 +1,8 @@
+default_prompt: "Green monster surprised by a jump scare in a horror movie"
+pop_size: 5
+num_generations: 5000
+mutation_rate: 0.1
+crossover_proportion: 0.8
+crossover_rate: 0.9
+inference_steps: 4
+deterministic: False
