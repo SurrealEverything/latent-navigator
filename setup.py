@@ -5,18 +5,18 @@ torch_diffusers_requirements = [
     'diffusers~=0.26.0',
     'transformers~=4.38.0',
     'accelerate~=0.27.0',
-    'Pillow',
+    # 'Pillow',
 ]
 
 imaging_requirements = [
-        'imageio',
+        # 'imageio',
         'numpy',
         # Used in the Aesthetics model for evaluation
-        'clip @ git+https://github.com/openai/CLIP.git@a1d071733d7111c9c014f024669f959182114e33',
-        'torchvision~=0.17.0',
-        'torchmetrics~=1.3.0',
-        'pytorch-lightning~=2.2.0',
-        'imageio>=2.33.0',
+        # 'clip @ git+https://github.com/openai/CLIP.git@a1d071733d7111c9c014f024669f959182114e33',
+        # 'torchvision~=0.17.0',
+        # 'torchmetrics~=1.3.0',
+        # 'pytorch-lightning~=2.2.0',
+        # 'imageio>=2.33.0',
 ]
 
 extras_require = {
@@ -42,17 +42,17 @@ setup(
     long_description='''This package includes generic classes for evolutionary computation in a generational environment.
                      Crossover and Mutation happens on the argument (A) level, whilst the fitness is evaluated on the result (R) level.
                      SolutionCandidates are created by a SolutionCreator, their representation is split into arguments (A) and result (R).
-                     
+
                      Additional installation variants (pip install evolutionary[...]):
                      * all: Install all dependencies, full functionality across all subpackages.
-                     * imaging (evolutionary_imaging): Contains base dependencies for evolutionary image generation, 
+                     * imaging (evolutionary_imaging): Contains base dependencies for evolutionary image generation,
                      evaluation and visualization.
-                     * model_helpers (evolutionary_model_helpers): Auto-loading different model types on devices. 
+                     * model_helpers (evolutionary_model_helpers): Auto-loading different model types on devices.
                      With additional utility functions. Variation for tensors.
-                     * prompt_embedding (evolutionary_prompt_embedding): Using evolutionary_prompt_embeddings to 
+                     * prompt_embedding (evolutionary_prompt_embedding): Using evolutionary_prompt_embeddings to
                      generate images and perform evolutionary variation using prompt embeddings.
                      * prompt_embedding_utils (evolutionary_prompt_embedding.utils): Additional utilities for evaluating
-                     prompt embedding range. 
+                     prompt embedding range.
                      ''',
     packages=find_packages(),
     install_requires=[
